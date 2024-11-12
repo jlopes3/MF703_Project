@@ -36,12 +36,3 @@ def vol_difference_test(months_before, months_after, dataset):
     return annualized_election_volatility, annualized_non_election_volatility, lev_stat, p_value
 
 
-
-p_values_table = pd.DataFrame(index=range(1,13), columns=range(1,13))
-for x in range(1,13):
-    for y in range(1,13):
-        _, _, _, p_value = vol_difference_test(x, y, "GSPC.csv")
-        print("Election Period: " + str(x) + " months before, " + str(y) + " months after. P-value: " + str(p_value))
-        p_values_table.at[y, x] = p_value
-
-
