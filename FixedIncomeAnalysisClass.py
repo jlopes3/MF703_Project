@@ -108,7 +108,7 @@ class Treasuries:
         modified_duration = self.modified_duration()
         convexity = self.convexity()
         yield_shock = np.percentile(np.random.normal(0, 0.01, 10000), 1 - confidence_level)
-        price_change = -self.price * (modified_duration * yield_shock + 0.5 * convexity * yield_shock**2)
+        price_change = -self.price() * (modified_duration * yield_shock + 0.5 * convexity * yield_shock**2)
         return price_change
 
     def election_cycle_risk_analysis(self, election_date):
