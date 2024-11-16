@@ -6,7 +6,8 @@
 # 
 #
 import pandas as pd
-from scipy.stats import f
+from scipy.stats import f, norm
+import numpy as np
 
 class future:
     
@@ -20,18 +21,22 @@ class future:
         self.df = self.df[self.df['PX_LAST'].notna()]
         
         self.df["daily_returns"] = self.df["PX_LAST"].pct_change(1,fill_method=None)
+        self.df["daily_returns"] = self.df["daily_returns"].shift(-1)
+        self.df.drop(self.df.index[-1],inplace=True)
         self.stdev = self.df["daily_returns"].std()
+        self.df["daily_log_returns"] = np.log(1 + self.df["daily_returns"])
+        
         
         self.all_returns = self.df["daily_returns"]
-        self.election_returns = self.df.loc[
+        self.election_log_returns = self.df.loc[
             (self.df.index.year % 4 == 0) & 
             (((self.df.index.month >= 5) & (self.df.index.month < 11)) | 
              ((self.df.index.month == 11) & (self.df.index.day <= 21))),
-            'daily_returns' ]
-        self.non_election_returns = self.df.loc[
+            'daily_log_returns' ]
+        self.non_election_log_returns = self.df.loc[
             ~((self.df.index.year % 4 == 0) & 
               (((self.df.index.month >= 5) & (self.df.index.month < 11)) | 
-               ((self.df.index.month == 11) & (self.df.index.day <= 21)))),'daily_returns']
+               ((self.df.index.month == 11) & (self.df.index.day <= 21)))),'daily_log_returns']
     
     def correlation(self, other, period = "all"):
         """ Returns the correlation of one Future returns and 'other'
@@ -40,28 +45,42 @@ class future:
         """
         if type(other) == future:
             if(period == "all"):
-                ret = self.df['daily_returns'].corr(other.df['daily_returns'])
+                ret = self.df['daily_log_returns'].corr(other.df['daily_log_returns'])
                 return ret
             if (period == 'election'):
-                ret = self.election_returns.corr(other.election_returns)
+                ret = self.election_log_returns.corr(other.election_log_returns)
                 return ret
             else:
-                ret = self.non_election_returns.corr(other.non_election_returns)
+                ret = self.non_election_log_returns.corr(other.non_election_log_returns)
                 return ret
         else:
-            ret = self.df['daily_returns'].corr(other)
+            ret = self.df['daily_log_returns'].corr(other)
             return ret
         
     def election_var_F_test(self):
-        var_election = self.election_returns.var(ddof=1)
-        var_non_election = self.non_election_returns.var(ddof=1)
+        var_election = self.election_log_returns.var(ddof=1)
+        var_non_election = self.non_election_log_returns.var(ddof=1)
         
         f_stat = max(var_election, var_non_election) / min(var_election, var_non_election)
         
-        df1 = len(self.election_returns)
-        df2 = len(self.non_election_returns)
+        df1 = len(self.election_log_returns)
+        df2 = len(self.non_election_log_returns)
         
         p_value = 1 - f.cdf(f_stat,df1,df2)
         
         return (f_stat, p_value)
         
+    def calculate_VaR(self, conf_level = .95):
+        avg_returns = self.df['daily_returns'].mean()
+        z_score = norm.ppf(1 - conf_level)
+        return (avg_returns + z_score*self.stdev)
+    
+    def calculate_ES(self,conf_level = .95):
+        var = self.calculate_VaR(conf_level)
+        es = self.df[self.df['daily_returns'] <= var]['daily_returns'].mean()
+        return es
+    
+    def get_mkt_beta(self,mkt_returns,period='all'):
+        """ Returns the correlation coefficient specifically for market returns
+        """
+        return self.correlation(mkt_returns,period)
