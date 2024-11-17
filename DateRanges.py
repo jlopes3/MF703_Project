@@ -17,8 +17,8 @@ class ElectionYears:
         returns dictionary with keys = year and values that are lists.
 
         dict = {str(year) :
-            list[0] = period_start_date
-            list[1] = period_end_date
+            list[0] = period_start_date : pd.Timestamp
+            list[1] = period_end_date : pd.Timestamp
             }
         """
 
@@ -41,6 +41,7 @@ class NonElectionYears(ElectionYears):
         if years_after_election not in [1,3]:
             raise ValueError("Input must be either 1 or 3")
             print("You entered" + str(years_after_election))
+        super().__init__()
         self.start_date = dt.datetime(year = 1992 + years_after_election, month = 1, day = 1)
         self.o_range = 2024 - self.start_date.year #overall range
         self.num_ranges = self.o_range // 4 + 1

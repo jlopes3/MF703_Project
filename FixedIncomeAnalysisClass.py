@@ -2,8 +2,6 @@
 import numpy as np
 from scipy.optimize import minimize
 from datetime import datetime, timedelta
-import DateRanges
-
 # %%
 class Treasuries:
     def __init__(self, ytm, maturity_years, face_value = 100, frequency=2, issue_date=None):
@@ -17,6 +15,7 @@ class Treasuries:
             ytm (float): Current market yield to maturity of the bond.
             maturity_years (float): Years until maturity.
             frequency (int): Coupon payment frequency per year (default is 2 for semi-annual).
+                if frequency == 0, it is a zero coupon bond
             issue_date (datetime): The bond's issue date.
         """
         self.face_value = face_value
@@ -25,7 +24,7 @@ class Treasuries:
         self.frequency = frequency
         self.issue_date = issue_date if issue_date else datetime.today()
         self.maturity_date = self.issue_date + timedelta(days=maturity_years * 365)
-        self.periods = int(self.maturity_years * self.frequency) - 1 #note that within the first year, there is only  (frequency - 1) cashflows due to issuance.
+        self.periods = int(self.maturity_years * self.frequency)
     
     def cash_flows(self):
         """
@@ -35,6 +34,9 @@ class Treasuries:
             np.array: Cash flows array for each period until maturity.
         """
         periods = self.periods
+        if periods == 0:
+            return np.array([self.face_value])
+
         coupon_payment = self.face_value * self.ytm / self.frequency #since we assume treasuries are issued at par, the coupon payment = the yield to maturity
         cash_flows = np.full(periods, coupon_payment)
         cash_flows[-1] += self.face_value  # Adding face value at maturity
@@ -46,7 +48,7 @@ class Treasuries:
 
     def price(self):
         """
-        Calculates the bond's price.
+        Calculates the bond's price. Since we assume Treasuries are issued at par, the price should be 100
 
         Returns:
             float: Price of a bond rounded to 2 decimal places.
@@ -56,7 +58,7 @@ class Treasuries:
         periods = self.periods
 
         discounts = self.discount_factors()
-        price = discounts@cash_flows
+        price = round(discounts@cash_flows, 2)
 
         return price
 
@@ -144,5 +146,3 @@ class Treasuries:
         }
 
         return analysis_results
-
-
