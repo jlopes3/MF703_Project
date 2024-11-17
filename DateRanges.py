@@ -43,4 +43,5 @@ class NonElectionYears(ElectionYears):
         self.num_ranges = self.o_range // 4 + 1
 
 e_year_ranges = ElectionYears().ranges()
-ne_year_ranges = NonElectionYears().ranges()
+ne_1_year_ranges = NonElectionYears().ranges()
+ne_3_year_ranges = NonElectionYears(3).ranges()
