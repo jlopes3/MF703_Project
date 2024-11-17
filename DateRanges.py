@@ -40,7 +40,7 @@ class NonElectionYears(ElectionYears):
             print("You entered" + str(years_after_election))
         self.start_date = dt.datetime(year = 1992 + years_after_election, month = 1, day = 1)
         self.o_range = 2024 - self.start_date.year #overall range
-        self.num_ranges = self.o_range // 4
+        self.num_ranges = self.o_range // 4 + 1
 
 e_year_ranges = ElectionYears().ranges()
 ne_year_ranges = NonElectionYears().ranges()
