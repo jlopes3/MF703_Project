@@ -42,3 +42,5 @@ class NonElectionYears(ElectionYears):
         self.o_range = 2024 - self.start_date.year #overall range
         self.num_ranges = self.o_range // 4
 
+e_year_ranges = ElectionYears().ranges()
+ne_year_ranges = NonElectionYears().ranges()
