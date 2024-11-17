@@ -15,8 +15,11 @@ class ElectionYears:
     def ranges(self):
         """Getting ranges for each year that we are analyzing.
         returns dictionary with keys = year and values that are lists.
+
+        dict = {str(year) :
             list[0] = period_start_date
             list[1] = period_end_date
+            }
         """
 
         r_ranges = {} #returning ranges for years. 
@@ -28,7 +31,7 @@ class ElectionYears:
             start = dt.datetime(year = year, month = e_day.month - 6, day = e_day.day)
             end = e_day + dt.timedelta(days = 14)
 
-            r_ranges[str(year)] = [start, end]
+            r_ranges[str(year)] = [pd.Timestamp(start), pd.Timestamp(end)]
 
         return r_ranges
 
@@ -42,6 +45,6 @@ class NonElectionYears(ElectionYears):
         self.o_range = 2024 - self.start_date.year #overall range
         self.num_ranges = self.o_range // 4 + 1
 
-e_year_ranges = ElectionYears().ranges()
-ne_1_year_ranges = NonElectionYears().ranges()
-ne_3_year_ranges = NonElectionYears(3).ranges()
+e_year_ranges = ElectionYears().ranges() #election year ranges
+ne_1_year_ranges = NonElectionYears().ranges() # 1 year after election year ranges
+ne_3_year_ranges = NonElectionYears(3).ranges() # 3 year after election year ranges
