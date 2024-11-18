@@ -8,18 +8,17 @@ class Treasuries:
         """
         Initializes a Treasury object.
 
-        Assumes treasuries are issued at par
+        Assumes treasuries are issued at par and are compounded semi-annually
 
         Parameters:
             face_value (float): The bond's face value.
             ytm (float): Current market yield to maturity of the bond.
             maturity_years (float): Years until maturity.
-            frequency (int): Coupon payment frequency per year (default is 2 for semi-annual).
-                if frequency == 0, it is a zero coupon bond
+            frequency (int): Coupon payment frequency and compounding frequency per year(default is 2 for semi-annual).
             issue_date (datetime): The bond's issue date.
         """
         self.face_value = face_value
-        self.ytm = ytm
+        self.ytm = ytm/100 #yields are quoted in percentages on Bloomberg
         self.maturity_years = maturity_years
         self.frequency = frequency
         self.issue_date = issue_date if issue_date else datetime.today()
@@ -34,7 +33,7 @@ class Treasuries:
             np.array: Cash flows array for each period until maturity.
         """
         periods = self.periods
-        if periods == 0:
+        if periods == 1:
             return np.array([self.face_value])
 
         coupon_payment = self.face_value * self.ytm / self.frequency #since we assume treasuries are issued at par, the coupon payment = the yield to maturity
@@ -55,7 +54,6 @@ class Treasuries:
             example: 98.25 -> $98.25 / 100 face
         """
         cash_flows = self.cash_flows()
-        periods = self.periods
 
         discounts = self.discount_factors()
         price = round(discounts@cash_flows, 2)

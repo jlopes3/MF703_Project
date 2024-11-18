@@ -28,7 +28,7 @@ class ElectionYears:
         for i in range(self.num_ranges):
             year = self.start_date.year + 4*i
             e_day = election_day(year).to_pydatetime()
-            start = dt.datetime(year = year, month = e_day.month - 6, day = e_day.day)
+            start = e_day - dt.timedelta(days = 52/2 *7) # Keeping the start day a tuesday 26 weeks (6 months) prior
             end = e_day + dt.timedelta(days = 14)
 
             r_ranges[str(year)] = [pd.Timestamp(start), pd.Timestamp(end)]
