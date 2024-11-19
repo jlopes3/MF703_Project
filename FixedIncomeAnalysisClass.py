@@ -112,7 +112,7 @@ class Treasuries:
         price_change = -self.price() * (modified_duration * yield_shock + 0.5 * convexity * yield_shock**2)
         return price_change
 
-    def election_cycle_risk_analysis(self, election_date):
+    def election_cycle_risk_analysis(self, election_date: int):
         """
         Analyzes the bond's performance over an election cycle, six months before and 
         two weeks post-election.
@@ -146,7 +146,7 @@ class Treasuries:
         return analysis_results
     
     def calculate_beta(asset_returns, market_returns):
-         """
+        """
         Calculate the beta of an asset relative to the market.
 
         Parameters:
