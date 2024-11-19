@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+from functools import reduce
 
 class ETF:
     def __init__(self, ticker):
@@ -14,9 +15,9 @@ class ETF:
             None    
         """
         self.df = pd.read_csv("../Data/ETFData/merged_cleaned_etf_data.csv")
-
-        self.prices = self.df[ticker + " Adj Close"]
-        self.log_returns = self._calculate_log_returns()
+        self.df['Date'] = pd.to_datetime(self.df['Date'])
+        self.prices = self.df.set_index('Date')[[ticker + " Adj Close"]]
+        self.log_returns = self._calculate_log_returns().rename(columns={ticker + " Adj Close": ticker + " Log Return"})
    
     def _calculate_log_returns(self):
         """
@@ -52,8 +53,8 @@ class ETF:
         Returns:
             Series with VaR of each asset.
         """
-        mean = self.returns.mean()
-        std_dev = self.returns.std()
+        mean = self.log_returns.mean()
+        std_dev = self.log_returns.std()
         z_score = norm.ppf(1 - confidence_level)
         return -(mean + z_score * std_dev)
    
@@ -71,25 +72,39 @@ class ETF:
         tail_losses = self.log_returns[self.log_returns < -VaR]
         return -tail_losses.mean()
 
-    def correlation_matrix(self):
+    def correlation_matrix(self, otherList):
         """
         This function calculates the correlation matrix of the log returns.
+
+        Args:
+            otherList (list): List of strings for tickers for other ETFs.
 
         Returns:
             DataFrame with correlation matrix.
         """
-        return self.log_returns.corr()
-   
-    def covariance_matrix(self):
+        log_return_df_list = [self.log_returns]
+        for ticker in otherList:
+            log_return_df_list += [ETF(ticker).log_returns]
+        merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', on="Date"), log_return_df_list)
+        return merged_df.corr()
+    
+    def covariance_matrix(self, otherList):
         """
         This function calculates the covariance matrix of the log returns.
 
-        Returns:
-            DataFrame with covariance matrix.
-        """
-        return self.log_returns.cov()
+        Args:
+            otherList (list): List of strings for tickers for other ETFs.
 
-    def calculate_beta(self, benchmark_returns):
+        Returns:
+            DataFrame with correlation matrix.
+        """
+        log_return_df_list = [self.log_returns]
+        for ticker in otherList:
+            log_return_df_list += [ETF(ticker).log_returns]
+        merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', on="Date"), log_return_df_list)
+        return merged_df.cov()
+
+    def calculate_beta(self, benchmark_ticker):
         """
         This function calculates the beta of the ETF relative to a benchmark ETF.
 
@@ -99,8 +114,9 @@ class ETF:
         Returns:
             Float: Beta of the ETF relative to the benchmark.
         """
-        covariance = np.cov(self.log_returns, benchmark_returns)[0, 1]
-        benchmark_variance = np.var(benchmark_returns)
+        benchmarkETF = ETF(benchmark_ticker)
+        covariance = np.cov(self.log_returns, benchmarkETF.log_returns)[0, 1]
+        benchmark_variance = np.var(benchmarkETF.log_returns)
         beta = covariance / benchmark_variance
         return beta
 
