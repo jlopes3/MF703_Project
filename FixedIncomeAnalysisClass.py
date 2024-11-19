@@ -144,3 +144,21 @@ class Treasuries:
         }
 
         return analysis_results
+    
+    def calculate_beta(asset_returns, market_returns):
+         """
+        Calculate the beta of an asset relative to the market.
+
+        Parameters:
+            asset_returns (np.array): Array of historical returns of the asset.
+            market_returns (np.array): Array of historical returns of the market.
+
+        Returns:
+            float: The beta of the asset.
+        """
+        covariance_matrix = np.cov(asset_returns, market_returns)
+        covariance = covariance_matrix[0, 1]
+        market_variance = np.var(market_returns, ddof=1)
+        beta = covariance / market_variance
+        return beta
+
