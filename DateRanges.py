@@ -49,3 +49,21 @@ class NonElectionYears(ElectionYears):
 e_year_ranges = ElectionYears().ranges() #election year ranges
 ne_1_year_ranges = NonElectionYears().ranges() # 1 year after election year ranges
 ne_3_year_ranges = NonElectionYears(3).ranges() # 3 year after election year ranges
+
+
+# This function creates a dataframe with dates as the indexes and a column containing
+# a boolean indicating whether or not the date is in an election period.
+def createElectionPeriodBoolsDF(e_years_ranges):
+    start_date = min([rng[0] for rng in e_year_ranges.values()])
+    end_date = max([rng[1] for rng in e_year_ranges.values()])
+    all_dates = pd.date_range(start=start_date, end=end_date, freq='D')
+
+    df = pd.DataFrame(index=all_dates)
+    df['In an Election Period'] = False
+
+    for _, (start, end) in e_year_ranges.items():
+        df.loc[start:end, 'In an Election Period'] = True
+    
+    return df
+
+electionPeriodBoolsDF = createElectionPeriodBoolsDF(e_year_ranges)
