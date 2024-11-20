@@ -9,18 +9,18 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
 from DateRanges import electionPeriodBoolsDF
 from FinancialInstrument import FinancialInstrument
 
-class ETF(FinancialInstrument):
+class Future(FinancialInstrument):
     """
-    Class representing an Exchange-Traded Fund (ETF).
+    Class representing a Future.
     """
     def __init__(self, ticker, period):
         """
-        This is the constructor for the ETF class. Ticker is the string of the ticker and period is an integer
+        This is the constructor for the Future class. Ticker is the string of the ticker and period is an integer
         that represents which time period is wanted to be used.
             
 
         Args:
-            ticker (string): The ticker of the ETF.
+            ticker (string): The ticker of the Future.
             period (integer): The time period that should be considered.
                 period = 1 -> election periods
                 period = -1 -> non-election periods
@@ -30,9 +30,10 @@ class ETF(FinancialInstrument):
             None
         """
         self.tickerCode = ticker
-        self.df = pd.read_csv("../Data/ETFData/merged_cleaned_etf_data.csv")
+        self.df = pd.read_csv("../Data/FuturesData/merged_cleaned_futures_data.csv")
+        self.df = self.df[self.df[ticker + " LAST"] >= 0]
         self.df['Date'] = pd.to_datetime(self.df['Date'])
-        self.prices = self.df.set_index('Date')[[ticker + " Adj Close"]]
+        self.prices = self.df.set_index('Date')[[ticker + " LAST"]]
         self.periodCode = period
         merged_df = pd.merge(self.prices, electionPeriodBoolsDF, left_index=True, right_index=True, how='inner')
         if period == 1:
@@ -41,20 +42,19 @@ class ETF(FinancialInstrument):
             merged_df = merged_df[~merged_df['In an Election Period']]
         merged_df = merged_df.drop(columns=['In an Election Period'])
         self.prices = merged_df
-
     
     @property
     def log_returns(self):
-        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.ticker + " Adj Close": self.ticker + " Log Return"})
+        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
 
     @property
     def instrument_type(self):
-        return "ETF"
+        return "Future"
     
     @property
     def ticker(self):
         return self.tickerCode
-    
+
     @property
     def period(self):
         if self.periodCode == 1:
@@ -72,7 +72,7 @@ class ETF(FinancialInstrument):
             confidence_level (float): The confidence level for the VaR calculation.
         
         Returns:
-            VaR of the ETF.
+            Series with VaR of each asset.
         """
         mean = self.log_returns.mean()
         std_dev = self.log_returns.std()
@@ -87,7 +87,7 @@ class ETF(FinancialInstrument):
             confidence_level (float): The confidence level for the ES calculation.
         
         Returns:
-            ES of the asset.
+            Series with ES of each asset.
         """
         VaR = self.calculate_VaR(confidence_level)
         tail_losses = self.log_returns[self.log_returns < -VaR]
