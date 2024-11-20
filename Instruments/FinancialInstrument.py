@@ -133,9 +133,12 @@ class FinancialInstrument(ABC):
         return beta
     
     def summary(self):
-        vol_series = self.calculate_volatility()
-        vol = float(vol_series.iloc[0])
+        vol = self.calculate_volatility()
+        first_date = self.log_returns.index[0]
+        last_date = self.log_returns.index[-1]
         return (f"Type: {self.instrument_type}, "
                 f"Ticker: {self.ticker}, "
                 f"Period: {self.period}, "
-                f"Volatility: {vol}")
+                f"Volatility: {vol}, "
+                f"First Date: {first_date}, "
+                f"Last Date: {last_date}")
