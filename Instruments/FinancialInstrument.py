@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 from functools import reduce
+from datetime import date
 
 class FinancialInstrument(ABC):
     """
@@ -49,9 +50,12 @@ class FinancialInstrument(ABC):
         """
         pass
 
-    def filter(self, startDate, endDate):
+    def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31)):
         filtered = self.log_returns.loc[startDate:endDate]
         self.log_returns = filtered
+
+    def get_date_range(self):
+        return self.log_returns.index.min(), self.log_returns.index.max()
         
     def calculate_volatility(self, annualize=True):
         """
@@ -82,6 +86,9 @@ class FinancialInstrument(ABC):
         if annualize:
             return float(daily_variance.iloc[0]) * 252
         return float(daily_variance.iloc[0])
+    
+    def expected_log_return(self):
+        return float(self.log_returns.sum().iloc[0])
 
     def correlation_matrix(self, others):
         """
@@ -142,3 +149,7 @@ class FinancialInstrument(ABC):
                 f"Volatility: {vol}, "
                 f"First Date: {first_date}, "
                 f"Last Date: {last_date}")
+    
+    def __str__(self):
+        return self.summary()
+
