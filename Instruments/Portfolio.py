@@ -37,6 +37,12 @@ class Portfolio:
         total_weight = sum(self.weights)
         if not np.isclose(total_weight, 1.0):
             raise ValueError(f"Portfolio weights must sum to 1. Current sum: {total_weight}")
+    
+    def change_weights(self, new_weights):
+        self._validate_weights()
+        self.weights = np.array(new_weights)
+        self.portfolio_log_returns = self.asset_log_returns_df.dot(self.weights)
+        return
 
     def expected_log_return(self):
         """
