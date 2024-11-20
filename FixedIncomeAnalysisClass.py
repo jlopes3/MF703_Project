@@ -3,6 +3,10 @@ import numpy as np
 from scipy.optimize import minimize
 from datetime import datetime, timedelta
 # %%
+def election_day(year):
+    date = pd.Timestamp(year=year, month=11, day=1)
+    return date + pd.offsets.Week(weekday=1)
+
 class Treasuries:
     def __init__(self, ytm, maturity_years, face_value = 100, frequency=2, issue_date=None):
         """
