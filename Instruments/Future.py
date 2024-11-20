@@ -77,7 +77,8 @@ class Future(FinancialInstrument):
         mean = self.log_returns.mean()
         std_dev = self.log_returns.std()
         z_score = norm.ppf(1 - confidence_level)
-        return -(mean + z_score * std_dev)
+        VaR = -(mean + z_score * std_dev)
+        return float(VaR.iloc[0])
     
     def calculate_ES(self, confidence_level=0.95):
         """
@@ -90,5 +91,6 @@ class Future(FinancialInstrument):
             Series with ES of each asset.
         """
         VaR = self.calculate_VaR(confidence_level)
-        tail_losses = self.log_returns[self.log_returns < -VaR]
-        return -tail_losses.mean()
+        tail_losses = self.log_returns[self.log_returns < VaR]
+        ES = -tail_losses.mean()
+        return float(ES.iloc[0])
