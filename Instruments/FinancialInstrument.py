@@ -17,6 +17,11 @@ class FinancialInstrument(ABC):
         Must be implemented by subclasses.
         """
         pass
+
+    @log_returns.setter
+    def log_returns(self, value):
+        pass
+    
     @property
     @abstractmethod
     def instrument_type(self):
@@ -44,7 +49,10 @@ class FinancialInstrument(ABC):
         """
         pass
 
-
+    def filter(self, startDate, endDate):
+        filtered = self.log_returns.loc[startDate:endDate]
+        self.log_returns = filtered
+        
     def calculate_volatility(self, annualize=True):
         """
         This function calculates the daily or annualized volatility of log returns.

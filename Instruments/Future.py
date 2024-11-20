@@ -45,7 +45,13 @@ class Future(FinancialInstrument):
     
     @property
     def log_returns(self):
+        if hasattr(self, '_log_returns'):
+            return self._log_returns
         return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
+
+    @log_returns.setter
+    def log_returns(self, value):
+        self._log_returns = value
 
     @property
     def instrument_type(self):
