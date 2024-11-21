@@ -3,6 +3,8 @@ import pandas as pd
 from FinancialInstrument import FinancialInstrument
 from ETF import ETF
 from Future import Future
+from datetime import date
+from DateRanges import electionPeriodBoolsDF, e_year_ranges
 
 class Portfolio:
     """
@@ -19,17 +21,27 @@ class Portfolio:
         """
         self.instruments, self.weights = zip(*instrument_weight_list)
         self.weights = np.array(self.weights)
+        self._validate_weights()
         self.start_date = (max(self.instruments, key=lambda instrument: instrument.get_date_range()[0])).get_date_range()[0]
         self.end_date = (min(self.instruments, key=lambda instrument: instrument.get_date_range()[1])).get_date_range()[1]
-        self._validate_weights()
         for instrument in self.instruments:
             instrument.filter(self.start_date, self.end_date)
         log_returns_dict = {
             instrument.ticker: instrument.log_returns for instrument in self.instruments
         }
-        self.asset_log_returns_df = pd.concat(log_returns_dict, axis=1)
+        self.full_asset_log_returns_df = pd.concat(log_returns_dict, axis=1)
+        self.asset_log_returns_df = self.full_asset_log_returns_df
         self.portfolio_log_returns = self.asset_log_returns_df.dot(self.weights)
 
+    def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
+        for instrument in self.instruments:
+            instrument.filter(startDate=startDate, endDate=endDate, period=period)
+        log_returns_dict = {
+            instrument.ticker: instrument.log_returns for instrument in self.instruments
+        }
+        self.asset_log_returns_df = pd.concat(log_returns_dict, axis=1)
+        self.portfolio_log_returns = self.asset_log_returns_df.dot(self.weights)
+        
     def _validate_weights(self):
         """
         Validate that the sum of weights equals 1.
@@ -44,7 +56,7 @@ class Portfolio:
         self.portfolio_log_returns = self.asset_log_returns_df.dot(self.weights)
         return
 
-    def expected_log_return(self):
+    def total_log_return(self):
         """
         Calculate the expected log return of the portfolio.
 
@@ -53,7 +65,7 @@ class Portfolio:
         """
         total_log_return = 0
         for instrument, weight in zip(self.instruments, self.weights):
-            total_log_return += weight * instrument.expected_log_return()
+            total_log_return += weight * instrument.total_log_return()
         return total_log_return
 
     def covariance_matrix(self):
@@ -99,5 +111,5 @@ class Portfolio:
         """
         summary_lines = [f"Instrument: {inst.ticker}, Weight: {weight}" 
                          for inst, weight in zip(self.instruments, self.weights)]
-        return "\n".join(summary_lines) + f"\nExpected Log Return: {self.expected_log_return():.2}\n" \
-                                          f"Portfolio Volatility: {self.portfolio_volatility():.2%}"
+        return "\n".join(summary_lines) + f"\nExpected Log Return: {self.total_log_return():.4}\n" \
+                                          f"Portfolio Volatility: {self.portfolio_volatility():.2}"
