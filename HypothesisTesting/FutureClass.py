@@ -16,7 +16,7 @@ class future:
         """
         self.symbol = filename[:-5]
         
-        self.df = pd.read_excel(filename,parse_dates=True,date_format="%m/%d%/%Y",index_col="Date")
+        self.df = pd.read_csv(filename,parse_dates=True,date_format="%m/%d%/%Y",index_col="Date")
         self.df.index = pd.to_datetime(self.df.index)
         self.df = self.df[self.df['PX_LAST'].notna()]
         

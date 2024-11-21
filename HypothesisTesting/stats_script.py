@@ -9,7 +9,9 @@ from FutureClass import future
 import pandas as pd
 
 tickers = ["SI1","CL1","DX1","ES1","FF1","FF4","GC1","NG1","TY1"]
-filenames = [ticker + '.xlsx' for ticker in tickers]
+#filenames = [r"Data\FuturesData\Raw\\"+ticker + '.xlsx' for ticker in tickers]
+filenames = [r"Data\FuturesData\Raw\CL1.xlsx",r"Data\FuturesData\Raw\DX1.xlsx",r"Data\FuturesData\Raw\ES1.xlsx",r"Data\FuturesData\Raw\FF1.xlsx",
+             r"Data\FuturesData\Raw\FF4.xlsx",r"Data\FuturesData\Raw\GC1.xlsx",r"Data\FuturesData\Raw\NG1.xlsx",r"Data\FuturesData\Raw\SI1.xlsx", r"Data\FuturesData\Raw\TY1.xlsx"]
 
 futures = {}
 for filename in filenames:
