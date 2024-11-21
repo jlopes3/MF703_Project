@@ -127,6 +127,21 @@ class Portfolio:
         risk_premium = rm - rf
         expected_return = beta * risk_premium + rm
         return expected_return
+    
+    def sharpe_ratio(self,benchmark,rf):
+        """
+        Calculates and returns the sharpe ratio of the portfolio
+        
+        Args:
+            benchmark (financial instrument): Financial Instrument class representing benchmark comparison
+            rf (double): risk-free rate annualized as log
+        
+        Returns:
+            float: portfolio Sharpe Ratio
+        """
+        exp_return = self.calculate_expected_return(benchmark, rf)
+        vol = self.portfolio_volatility()
+        return exp_return / vol
         
     def summary(self):
         """
