@@ -25,7 +25,7 @@ class ElectionYears:
         r_ranges = {} #returning ranges for years. 
         # values of r_ranges will be lists. index 1 returns the start date. Index 
 
-        for i in range(self.num_ranges):
+        for i in range(self.num_ranges + 1):
             year = self.start_date.year + 4*i
             e_day = election_day(year).to_pydatetime()
             start = e_day - dt.timedelta(days = 52/2 *7) # Keeping the start day a tuesday 26 weeks (6 months) prior
