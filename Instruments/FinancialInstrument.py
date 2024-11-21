@@ -4,6 +4,10 @@ import numpy as np
 from scipy.stats import norm
 from functools import reduce
 from datetime import date
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
+from DateRanges import electionPeriodBoolsDF
 
 class FinancialInstrument(ABC):
     """
@@ -12,15 +16,42 @@ class FinancialInstrument(ABC):
 
     @property
     @abstractmethod
+    def full_log_returns(self):
+        """
+        Abstract property representing the full log returns as a pandas DataFrame.
+        This is the log returns for all available data, and this is not updated by
+        filtering.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @property
+    @abstractmethod
     def log_returns(self):
         """
-        Abstract property representing the log returns as a pandas DataFrame.
+        Abstract property representing the log returns as a pandas DataFrame. This
+        is updated by filtering.
         Must be implemented by subclasses.
         """
         pass
 
     @log_returns.setter
     def log_returns(self, value):
+        pass
+
+    @property
+    @abstractmethod
+    def period(self):
+        """
+        Abstract property representing the period as a an integer. 1 correspends to
+        an election period, -1 corresponds to a non-election period, and anything
+        else corresponds to the total time period.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @period.setter
+    def period(self, value):
         pass
     
     @property
@@ -40,22 +71,20 @@ class FinancialInstrument(ABC):
         Must be implemented by subclasses.
         """
         pass
-
-    @property
-    @abstractmethod
-    def period(self):
-        """
-        Abstract property representing the type of period as a string.
-        Must be implemented by subclasses.
-        """
-        pass
-
-    def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31)):
-        filtered = self.log_returns.loc[startDate:endDate]
-        self.log_returns = filtered
-
+    
     def get_date_range(self):
         return self.log_returns.index.min(), self.log_returns.index.max()
+
+    def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
+        self.period = period
+        filtered = self.full_log_returns.loc[startDate:endDate]
+        merged_df = pd.merge(filtered, electionPeriodBoolsDF, left_index=True, right_index=True, how='inner')
+        if period == 1:
+            merged_df = merged_df[merged_df['In an Election Period']]
+        elif period == -1:
+            merged_df = merged_df[~merged_df['In an Election Period']]
+        merged_df = merged_df.drop(columns=['In an Election Period'])
+        self.log_returns = merged_df
         
     def calculate_volatility(self, annualize=True):
         """
@@ -87,9 +116,6 @@ class FinancialInstrument(ABC):
             return float(daily_variance.iloc[0]) * 252
         return float(daily_variance.iloc[0])
     
-    def expected_log_return(self):
-        return float(self.log_returns.sum().iloc[0])
-
     def correlation_matrix(self, others):
         """
         This function calculates the correlation matrix of the log returns.
@@ -122,6 +148,15 @@ class FinancialInstrument(ABC):
         merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', left_index=True, right_index=True), log_return_df_list)
         return merged_df.cov()
 
+    def total_log_return(self):
+        """
+        This function calculates the total log returns.
+
+        Returns:
+            Float
+        """
+        return float(self.log_returns.sum().iloc[0])
+    
     def calculate_beta(self, benchmark):
         """
         This function calculates the beta between self and a benchmark Financial Instrument.
@@ -130,7 +165,7 @@ class FinancialInstrument(ABC):
             benchmark (FinancialInstrument): benchmark Financial Instrument.
 
         Returns:
-            DataFrame with correlation matrix.
+            Float
         """
         cov_matrix = self.covariance_matrix([benchmark])
         covariance = cov_matrix.iloc[0, 1]
@@ -140,12 +175,19 @@ class FinancialInstrument(ABC):
         return beta
     
     def summary(self):
+        period_string = ""
+        if self.period == 1:
+            period_string = "Election Periods Only"
+        elif self.period == -1:
+            period_string = "Non-Election Periods Only"
+        else:
+            period_string = "All Periods"
         vol = self.calculate_volatility()
         first_date = self.log_returns.index[0]
         last_date = self.log_returns.index[-1]
         return (f"Type: {self.instrument_type}, "
                 f"Ticker: {self.ticker}, "
-                f"Period: {self.period}, "
+                f"Period: {period_string}, "
                 f"Volatility: {vol}, "
                 f"First Date: {first_date}, "
                 f"Last Date: {last_date}")

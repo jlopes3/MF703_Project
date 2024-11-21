@@ -13,18 +13,12 @@ class Future(FinancialInstrument):
     """
     Class representing a Future.
     """
-    def __init__(self, ticker, period):
+    def __init__(self, ticker):
         """
-        This is the constructor for the Future class. Ticker is the string of the ticker and period is an integer
-        that represents which time period is wanted to be used.
+        This is the constructor for the Future class. Ticker is the string of the ticker.
             
-
         Args:
             ticker (string): The ticker of the Future.
-            period (integer): The time period that should be considered.
-                period = 1 -> election periods
-                period = -1 -> non-election periods
-                period = anything else -> total time period
         
         Returns:
             None
@@ -34,15 +28,12 @@ class Future(FinancialInstrument):
         self.df = self.df[self.df[ticker + " LAST"] >= 0]
         self.df['Date'] = pd.to_datetime(self.df['Date'])
         self.prices = self.df.set_index('Date')[[ticker + " LAST"]]
-        self.periodCode = period
-        merged_df = pd.merge(self.prices, electionPeriodBoolsDF, left_index=True, right_index=True, how='inner')
-        if period == 1:
-            merged_df = merged_df[merged_df['In an Election Period']]
-        elif period == -1:
-            merged_df = merged_df[~merged_df['In an Election Period']]
-        merged_df = merged_df.drop(columns=['In an Election Period'])
-        self.prices = merged_df
+        self.periodCode = 0
     
+    @property
+    def full_log_returns(self):
+        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
+
     @property
     def log_returns(self):
         if hasattr(self, '_log_returns'):
@@ -54,21 +45,22 @@ class Future(FinancialInstrument):
         self._log_returns = value
 
     @property
+    def period(self):
+        if hasattr(self, '_period'):
+            return self._period
+        return self.periodCode
+
+    @period.setter
+    def period(self, value):
+        self._period = value
+
+    @property
     def instrument_type(self):
         return "Future"
     
     @property
     def ticker(self):
         return self.tickerCode
-
-    @property
-    def period(self):
-        if self.periodCode == 1:
-            return "Election Periods"
-        if self.periodCode == -1:
-            return "Non-Election Periods"
-        return "Total Time Period"
-
 
     def calculate_VaR(self, confidence_level=0.95):
         """
