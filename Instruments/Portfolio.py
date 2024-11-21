@@ -19,6 +19,7 @@ class Portfolio:
             instrument_weight_list (FinancialInstrument, float): List of tuples where the the first element
                 is the FinancialInstrument and the second element is the weight as a float.
         """
+        self.period = "Total time period"
         self.instruments, self.weights = zip(*instrument_weight_list)
         self.weights = np.array(self.weights)
         self._validate_weights()
@@ -34,6 +35,12 @@ class Portfolio:
         self.portfolio_log_returns = self.asset_log_returns_df.dot(self.weights)
 
     def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
+        if period == 0:
+            self.period = "Total time period"
+        elif period == 1:
+            self.period = "Election period"
+        elif period == -1:
+            self.period = "Non-election period"
         for instrument in self.instruments:
             instrument.filter(startDate=startDate, endDate=endDate, period=period)
         log_returns_dict = {
@@ -101,7 +108,6 @@ class Portfolio:
             total_beta += weight * instrument.calculate_beta(benchmark)
         return total_beta
         
-
     def summary(self):
         """
         Print a summary of the portfolio.
@@ -109,7 +115,15 @@ class Portfolio:
         Returns:
             str: Summary of the portfolio.
         """
-        summary_lines = [f"Instrument: {inst.ticker}, Weight: {weight}" 
-                         for inst, weight in zip(self.instruments, self.weights)]
-        return "\n".join(summary_lines) + f"\nExpected Log Return: {self.total_log_return():.4}\n" \
-                                          f"Portfolio Volatility: {self.portfolio_volatility():.2}"
+        start_date = self.portfolio_log_returns.index[0]
+        end_date = self.portfolio_log_returns.index[-1]
+
+        return f"Period: {self.period}\n" + \
+            "\n".join([f"Instrument: {inst.ticker}, Weight: {weight}" 
+                        for inst, weight in zip(self.instruments, self.weights)]) + \
+            f"\nExpected Log Return: {self.total_log_return():.4}\n" \
+            f"Portfolio Volatility: {self.portfolio_volatility():.2}\n" \
+            f"Start Date: {start_date}\nEnd Date: {end_date}"
+
+    def __str__(self):
+        return self.summary()
