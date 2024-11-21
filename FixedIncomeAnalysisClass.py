@@ -9,7 +9,7 @@ def election_day(year):
     return date + pd.offsets.Week(weekday=1)
 
 class Treasuries:
-    def __init__(self, ytm, maturity_years, face_value = 100, frequency=2, issue_date=None):
+    def __init__(self, ytm, maturity_years, face_value = 100, frequency=2, issue_date=datetime.today()):
         """
         Initializes a Treasury object.
 
@@ -26,9 +26,10 @@ class Treasuries:
         self.ytm = ytm/100 #yields are quoted in percentages on Bloomberg
         self.maturity_years = maturity_years
         self.frequency = frequency
-        self.issue_date = issue_date if issue_date else datetime.today()
+        self.issue_date = issue_date
         self.maturity_date = self.issue_date + timedelta(days=maturity_years * 365)
         self.periods = int(self.maturity_years * self.frequency)
+        self.cash_flow_dates = pd.Series([issue_date + timedelta(weeks=26*i) for i in range(1, self.periods + 1)])
     
     def cash_flows(self):
         """
@@ -166,4 +167,17 @@ class Treasuries:
         market_variance = np.var(market_returns, ddof=1)
         beta = covariance / market_variance
         return beta
+    
+    def time_till_coupon(self, current_date):
+        """Creating a pandas series to get the values of time till coupon payments given a new time"""
+        time_till_next_coupon = self.cash_flow_dates.apply( lambda x : (x - current_date))
+        time_till_next_coupon = time_till_next_coupon.apply(lambda x: x.days)
+        time_till_next_coupon = time_till_next_coupon.apply(lambda x: max(x, 0))
+        return time_till_next_coupon
+    
+    def new_price(self, current_date, new_ytm):
+        """Calculating the new price of a bond given a new yield to maturity and a new date"""
+        new_times = self.time_till_coupon(current_date=current_date)
+        
 
+# %%
