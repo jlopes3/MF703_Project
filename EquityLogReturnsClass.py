@@ -12,6 +12,7 @@ from scipy.stats import norm
 # In[2]:
 
 
+
 class EquityRiskAnalysis_logreturns:
     def __init__(self, log_returns: pd.DataFrame):
         """
@@ -66,7 +67,7 @@ class EquityRiskAnalysis_logreturns:
             Series with ES of each asset.
         """
         VaR = self.calculate_VaR(confidence_level)
-        tail_losses = self.log_returns[self.returns < -VaR]
+        tail_losses = self.log_returns[self.log_returns < -VaR]
         return -tail_losses.mean()
 
     def correlation_matrix(self):
@@ -92,7 +93,7 @@ class EquityRiskAnalysis_logreturns:
         This function generates a summary of risk metrics.
 
         Args:
-            vconfidence_level (float): The confidence level for the VaR and ES calculations.
+            confidence_level (float): The confidence level for the VaR and ES calculations.
     
         Returns:
             DataFrame with risk metrics summary.
@@ -103,4 +104,64 @@ class EquityRiskAnalysis_logreturns:
             'ES': self.calculate_ES(confidence_level)
         })
         return summary_df
+    
+    def cov_decomposition(self):
+        """
+        This function generates the eigenvalue decomposition of the covariance matrix.
+        
+        Returns:
+            A tuple of NumPy arrays the first being Eigenvalues, and the second being their corresponding Eigenvectors.
+        """
+        cov = self.covariance_matrix()
+        eigenvalues, eigenvectors = np.linalg.eig(cov)
+        sorted_indices = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[sorted_indices]
+        eigenvectors = eigenvectors[:, sorted_indices]
+        eigenvectors = np.transpose(eigenvectors)
+        return eigenvalues, eigenvectors
+    
+    def percent_variation_eigenvalues(self):
+        """
+        This function generates the weights of each PC from the eigenvalue decomposition.
+
+        Returns:
+            A NumPy array of normalized eigenvalues.
+        """
+        eigenvalues, __ = self.cov_decomposition()
+        weighted_eigenvalues = eigenvalues / eigenvalues.sum()
+        return weighted_eigenvalues
+
+    def significant_eigenvalues(self, variation = .9):
+        """
+        This function returns the amount of eigenvalues that are required to make up the percent of variation stated.
+
+        Args:
+            variation (float): The percent of variation for the PCA decomposition to explain.
+
+        Return:
+            A tuple of the amount of eigenvalues followed by a NumPy array of the eigenvalues themselves.
+        
+        """
+        eig = self.percent_variation_eigenvalues()
+        percent_var = 0
+        i = 0
+        while percent_var < variation:
+            percent_var += eig[i]
+            i+= 1
+        return (i, eig[0:i])
+
+    def significant_eigenvectors(self, variation = .9):
+        """
+        This function returns the amount of eigenvectors that are required to make up the percent of variation stated.
+
+        Args:
+            variation (float): The percent of variation for the PCA decomposition to explain.
+
+        Return:
+            A NumPy array of the eigenvectors corresponding to the significant eigenvalues.
+        
+        """
+        num, ___ = self.significant_eigenvalues()
+        ___, eigenvectors = self.cov_decomposition()
+        return eigenvectors[0:num]
 
