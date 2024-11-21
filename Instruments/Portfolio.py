@@ -5,6 +5,7 @@ from ETF import ETF
 from Future import Future
 from datetime import date
 from DateRanges import electionPeriodBoolsDF, e_year_ranges
+from ExpectedReturnCalc import ExpectedReturnCalc
 
 class Portfolio:
     """
@@ -107,6 +108,25 @@ class Portfolio:
         for instrument, weight in zip(self.instruments, self.weights):
             total_beta += weight * instrument.calculate_beta(benchmark)
         return total_beta
+    
+    def calculate_expected_return(self,benchmark,rf):
+        """
+        Uses CAPM on the portfolio to determine the expected return
+        
+        Args:
+            benchmark (financial instrument): Financial Instrument class representing a benchmark
+            rf (double): risk-free rate as an annualized figure
+
+        Returns:
+            float: portfolio expected return
+        """
+        beta = self.calculate_beta(benchmark)
+        rm = benchmark.full_log_returns
+        rm = rm.mean()
+        rm *= 252
+        risk_premium = rm - rf
+        expected_return = beta * risk_premium + rm
+        return expected_return
         
     def summary(self):
         """
@@ -124,6 +144,16 @@ class Portfolio:
             f"\nExpected Log Return: {self.total_log_return():.4}\n" \
             f"Portfolio Volatility: {self.portfolio_volatility():.2}\n" \
             f"Start Date: {start_date}\nEnd Date: {end_date}"
+            
+    def get_start(self):
+        """
+        return the start date of the portfolio
 
+        Returns:
+            start date of portfolio
+
+        """
+        return self.portfolio_log_returns.index[0]
+    
     def __str__(self):
         return self.summary()
