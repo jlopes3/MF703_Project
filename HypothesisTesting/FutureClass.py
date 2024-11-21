@@ -84,5 +84,3 @@ class future:
         """ Returns the correlation coefficient specifically for market returns
         """
         return self.correlation(mkt_returns,period)
-    
-print(pd.read_excel(r"Data\FuturesData\Raw\CL1.xlsx"))
