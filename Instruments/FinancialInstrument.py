@@ -72,6 +72,9 @@ class FinancialInstrument(ABC):
         """
         pass
     
+    def expected_annualized_log_return(self):
+        return float((self.log_returns.mean()*252).iloc[0])
+    
     def get_date_range(self):
         return self.log_returns.index.min(), self.log_returns.index.max()
 
