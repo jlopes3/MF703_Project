@@ -5,7 +5,10 @@ from ETF import ETF
 from Future import Future
 from datetime import date
 from DateRanges import electionPeriodBoolsDF, e_year_ranges
-from ExpectedReturnCalc import ExpectedReturnCalc
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
+from ExpectedReturnCalc import ExpectedReturnsCalculator
 
 class Portfolio:
     """
@@ -92,7 +95,7 @@ class Portfolio:
         Returns:
             float: The portfolio variance.
         """
-        return np.dot(self.weights.T, np.dot(self.covariance_matrix(), self.weights))
+        return self.weights.T @ self.covariance_matrix() @ self.weights
     
     def portfolio_volatility(self):
         """

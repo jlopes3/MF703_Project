@@ -146,7 +146,7 @@ class FinancialInstrument(ABC):
         for other in others:
             log_return_df_list += [other.log_returns]
         merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', left_index=True, right_index=True), log_return_df_list)
-        return merged_df.cov()
+        return merged_df.cov()*252
 
     def total_log_return(self):
         """
