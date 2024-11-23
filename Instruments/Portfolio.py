@@ -16,6 +16,7 @@ import plotly.express as px
 import scipy.stats as sc
 from scipy.stats import norm
 from scipy.optimize import minimize
+import yfinance as yf
 
 class Portfolio:
     """
@@ -134,6 +135,23 @@ class Portfolio:
         ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
         ef.plot(x='Volatility', y='Returns', style='.-', color='green')
         return
+    
+    def max_sharpe_portfolio(self, n_points=1000):
+        ticker = yf.Ticker("^TNX")
+        data = ticker.history(period="1d")
+        risk_free_rate = data["Close"].iloc[-1] / 100
+        log_risk_free_rate = np.log(1 + risk_free_rate)
+        weights = self.optimal_weights(n_points)
+        rets = [self.expected_portfolio_return(w) for w in weights]
+        sharpe_list = []
+        for ret, w in zip(rets, weights):
+            sharpe_ratio = ((ret - log_risk_free_rate) / self.annualized_portfolio_vol(w))
+            sharpe_list += [(sharpe_ratio, ret, w)]
+        max_sharpe, max_sharpe_ret, max_sharpe_weights = max(sharpe_list, key=lambda x: x[0])
+        max_sharp_vol = self.annualized_portfolio_vol(max_sharpe_weights)
+        return max_sharpe, max_sharpe_ret, max_sharp_vol, max_sharpe_weights
+
+
 
     def summary(self):
         """
