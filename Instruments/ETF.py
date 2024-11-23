@@ -62,34 +62,34 @@ class ETF(FinancialInstrument):
     def ticker(self):
         return self.tickerCode
 
+    # These functions are not used anywhere so I am commenting them out for now
+    # def calculate_VaR(self, confidence_level=0.95):
+    #     """
+    #     This function calculates the Value at Risk (VaR) for log returns at a given confidence level.
 
-    def calculate_VaR(self, confidence_level=0.95):
-        """
-        This function calculates the Value at Risk (VaR) for log returns at a given confidence level.
-
-        Args:
-            confidence_level (float): The confidence level for the VaR calculation.
+    #     Args:
+    #         confidence_level (float): The confidence level for the VaR calculation.
         
-        Returns:
-            VaR of the ETF.
-        """
-        mean = self.log_returns.mean()
-        std_dev = self.log_returns.std()
-        z_score = norm.ppf(1 - confidence_level)
-        VaR = -(mean + z_score * std_dev)
-        return float(VaR.iloc[0])
+    #     Returns:
+    #         VaR of the ETF.
+    #     """
+    #     mean = self.log_returns.mean()
+    #     std_dev = self.log_returns.std()
+    #     z_score = norm.ppf(1 - confidence_level)
+    #     VaR = -(mean + z_score * std_dev)
+    #     return float(VaR.iloc[0])
     
-    def calculate_ES(self, confidence_level=0.95):
-        """
-        This function calculates the Expected Shortfall (ES) for the log returns at a given confidence level.
+    # def calculate_ES(self, confidence_level=0.95):
+    #     """
+    #     This function calculates the Expected Shortfall (ES) for the log returns at a given confidence level.
 
-        Args:
-            confidence_level (float): The confidence level for the ES calculation.
+    #     Args:
+    #         confidence_level (float): The confidence level for the ES calculation.
         
-        Returns:
-            ES of the asset.
-        """
-        VaR = self.calculate_VaR(confidence_level)
-        tail_losses = self.log_returns[self.log_returns < VaR]
-        ES = -tail_losses.mean()
-        return float(ES.iloc[0])
+    #     Returns:
+    #         ES of the asset.
+    #     """
+    #     VaR = self.calculate_VaR(confidence_level)
+    #     tail_losses = self.log_returns[self.log_returns < VaR]
+    #     ES = -tail_losses.mean()
+    #     return float(ES.iloc[0])

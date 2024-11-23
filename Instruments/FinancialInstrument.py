@@ -175,17 +175,18 @@ class FinancialInstrument(ABC):
             return merged_df.cov()*252
         return merged_df.cov()
     
-    def calculate_beta(self, benchmark):
+    def calculate_beta(self, benchmark, annualize=True):
         """
         This function calculates the beta between self and a benchmark Financial Instrument.
 
         Args:
             benchmark (FinancialInstrument): benchmark Financial Instrument.
+            annualize (bool): If True, returns annualized beta.
 
         Returns:
             Float
         """
-        cov_matrix = self.covariance_matrix([benchmark])
+        cov_matrix = self.covariance_matrix([benchmark], annualize=annualize)
         covariance = cov_matrix.iloc[0, 1]
         benchmark_var = benchmark.calculate_variance(annualize=False) # There was an issue with dividing by zero when working with ETFs, check on this again
         benchmark_var = cov_matrix.iloc[1,1]
