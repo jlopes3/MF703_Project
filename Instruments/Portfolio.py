@@ -95,43 +95,42 @@ class Portfolio:
         """
         return self.asset_log_returns_df.cov() * 252
     
-    def annualized_portfolio_vol(self, weights, cov_mat):
-        return (weights.T @ cov_mat @ weights)**0.5
+    def annualized_portfolio_vol(self, weights):
+        return (weights.T @ self.annualized_covariance_matrix() @ weights)**0.5
     
-    def expected_portfolio_return(self, weights, expected_returns):  
-        return weights.T @ expected_returns
+    def expected_portfolio_return(self, weights):  
+        return weights.T @ self.expected_annaulized_log_returns_df
     
-    def minimize_vol(self, target_return, expected_return, cov_mat):
-        n = expected_return.shape[0]
+    def minimize_vol(self, target_return):
+        n = self.expected_annaulized_log_returns_df.shape[0]
         init_guess = np.repeat(1/n, n)
-        bounds = ((-0.5, 0.5),)*n
+        bounds = ((-0.5, 0.5),)*n  # We can adjust the constraints for individual asset weights here
         return_is_target = {
             'type' : 'eq',
-            'args' : (expected_return,),
-            'fun' : lambda weights, expected_return : target_return - self.expected_portfolio_return(weights, expected_return)
+            'args' : (self.expected_annaulized_log_returns_df,),
+            'fun' : lambda weights, expected_return : target_return - self.expected_portfolio_return(weights)
         }
         weights_sum_to_1 = {
             'type' : 'eq',
             'fun' : lambda weights : np.sum(weights) - 1
         }
         results = minimize(self.annualized_portfolio_vol, init_guess,
-                        args = (cov_mat,), method = 'SLSQP',
+                        method = 'SLSQP',
                         options={'disp': False},
                         constraints= (return_is_target, weights_sum_to_1),
                         bounds = bounds
                         )
         return results.x
     
-    def optimal_weights(self, n_points, expected_return, cov_mat):
-        target_rs = np.linspace(expected_return.min(), expected_return.max(), n_points)
-        weights = [self.minimize_vol(target_return, expected_return, cov_mat) for target_return in target_rs]
+    def optimal_weights(self, n_points):
+        target_rs = np.linspace(self.expected_annaulized_log_returns_df.min(), self.expected_annaulized_log_returns_df.max(), n_points)
+        weights = [self.minimize_vol(target_return) for target_return in target_rs]
         return weights
     
     def plot_ef(self, n_points=1000):
-        cov = self.annualized_covariance_matrix()
-        weights = self.optimal_weights(n_points, self.expected_annaulized_log_returns_df, cov)
-        rets = [self.expected_portfolio_return(w, self.expected_annaulized_log_returns_df) for w in weights]
-        vols = np.array([self.annualized_portfolio_vol(w, cov) for w in weights])
+        weights = self.optimal_weights(n_points)
+        rets = [self.expected_portfolio_return(w) for w in weights]
+        vols = np.array([self.annualized_portfolio_vol(w) for w in weights])
         ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
         ef.plot(x='Volatility', y='Returns', style='.-', color='green')
         return
