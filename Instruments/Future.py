@@ -27,18 +27,18 @@ class Future(FinancialInstrument):
         self.df = pd.read_csv("../Data/FuturesData/merged_cleaned_futures_data.csv")
         self.df = self.df[self.df[ticker + " LAST"] >= 0]
         self.df['Date'] = pd.to_datetime(self.df['Date'])
-        self.prices = self.df.set_index('Date')[[ticker + " LAST"]]
+        self._prices = self.df.set_index('Date')[[ticker + " LAST"]]
         self.periodCode = 0
     
     @property
     def full_log_returns(self):
-        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
+        return np.log(self._prices / self._prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
 
     @property
     def log_returns(self):
         if hasattr(self, '_log_returns'):
             return self._log_returns
-        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
+        return np.log(self._prices / self._prices.shift(1)).dropna().rename(columns={self.tickerCode + " LAST": self.tickerCode + " Log Return"})
 
     @log_returns.setter
     def log_returns(self, value):

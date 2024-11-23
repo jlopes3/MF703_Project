@@ -26,19 +26,19 @@ class ETF(FinancialInstrument):
         self.tickerCode = ticker
         self.df = pd.read_csv("../Data/ETFData/merged_cleaned_etf_data.csv")
         self.df['Date'] = pd.to_datetime(self.df['Date'])
-        self.prices = self.df.set_index('Date')[[ticker + " Adj Close"]]
+        self._prices = self.df.set_index('Date')[[ticker + " Adj Close"]]
         self.periodCode = 0
 
     
     @property
     def full_log_returns(self):
-        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.ticker + " Adj Close": self.ticker + " Log Return"})
+        return np.log(self._prices / self._prices.shift(1)).dropna().rename(columns={self.ticker + " Adj Close": self.ticker + " Log Return"})
 
     @property
     def log_returns(self):
         if hasattr(self, '_log_returns'):
             return self._log_returns
-        return np.log(self.prices / self.prices.shift(1)).dropna().rename(columns={self.ticker + " Adj Close": self.ticker + " Log Return"})
+        return np.log(self._prices / self._prices.shift(1)).dropna().rename(columns={self.ticker + " Adj Close": self.ticker + " Log Return"})
 
     @log_returns.setter
     def log_returns(self, value):

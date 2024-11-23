@@ -72,13 +72,35 @@ class FinancialInstrument(ABC):
         """
         pass
     
+    # This is calculated using just the historical yearly log return. This needs to be 
+    # redone use some other method for calculating expected annualized log return
     def expected_annualized_log_return(self):
+        # CHANGE THIS AT SOME POINT
         return float((self.log_returns.mean()*252).iloc[0])
+
     
     def get_date_range(self):
+        """
+        Retrieves the minimum and maximum dates of the log returns for the financial instrument.
+
+        Returns:
+            tuple: A tuple containing the minimum and maximum dates of the log returns.
+        """
         return self.log_returns.index.min(), self.log_returns.index.max()
 
     def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
+        """
+        Filters the log returns based on the given start and end dates, and the specified period.
+
+        Args:
+            startDate (date): The start date for filtering. Defaults to 1800-01-01.
+            endDate (date): The end date for filtering. Defaults to 2100-12-31.
+            period (int): The period to filter. 1 corresponds to election periods, -1 corresponds
+                to non-election periods, and 0 corresponds to all periods. Defaults to 0.
+
+        Returns:
+            None
+        """
         self.period = period
         filtered = self.full_log_returns.loc[startDate:endDate]
         merged_df = pd.merge(filtered, electionPeriodBoolsDF, left_index=True, right_index=True, how='inner')
@@ -135,7 +157,7 @@ class FinancialInstrument(ABC):
         merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', left_index=True, right_index=True), log_return_df_list)
         return merged_df.corr()
     
-    def covariance_matrix(self, others):
+    def covariance_matrix(self, others, annualize=True):
         """
         This function calculates the covariance matrix of the log returns.
 
@@ -149,16 +171,9 @@ class FinancialInstrument(ABC):
         for other in others:
             log_return_df_list += [other.log_returns]
         merged_df = reduce(lambda x, y: pd.merge(x, y, how='inner', left_index=True, right_index=True), log_return_df_list)
-        return merged_df.cov()*252
-
-    def total_log_return(self):
-        """
-        This function calculates the total log returns.
-
-        Returns:
-            Float
-        """
-        return float(self.log_returns.sum().iloc[0])
+        if annualize:
+            return merged_df.cov()*252
+        return merged_df.cov()
     
     def calculate_beta(self, benchmark):
         """
@@ -178,6 +193,12 @@ class FinancialInstrument(ABC):
         return beta
     
     def summary(self):
+        """
+        Returns a summary of the financial instrument's attributes.
+
+        Returns:
+            str: A string containing the instrument type, ticker, period, volatility, first date, and last date.
+        """
         period_string = ""
         if self.period == 1:
             period_string = "Election Periods Only"

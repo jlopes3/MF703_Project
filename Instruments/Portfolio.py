@@ -68,7 +68,9 @@ class Portfolio:
             instrument.ticker + " Expected Annualized Log Return": instrument.expected_annualized_log_return() for instrument in self.instruments
         }
         self.expected_annaulized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
-        
+
+
+    # Might delete  
     def _validate_weights(self):
         """
         Validate that the sum of weights equals 1.
@@ -77,6 +79,7 @@ class Portfolio:
         if not np.isclose(total_weight, 1.0):
             raise ValueError(f"Portfolio weights must sum to 1. Current sum: {total_weight}")
     
+    # Might delete
     def change_weights(self, new_weights):
         self._validate_weights()
         self.weights = np.array(new_weights)
@@ -130,8 +133,8 @@ class Portfolio:
         rets = [self.expected_portfolio_return(w, self.expected_annaulized_log_returns_df) for w in weights]
         vols = np.array([self.annualized_portfolio_vol(w, cov) for w in weights])
         ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
-        fig = ef.plot(x='Volatility', y='Returns', style='.-', color='green')
-        return fig
+        ef.plot(x='Volatility', y='Returns', style='.-', color='green')
+        return
 
     def summary(self):
         """
