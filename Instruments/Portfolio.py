@@ -152,7 +152,6 @@ class Portfolio:
     # the risk free rate from. The risk free rate is from 10 Year Treasury yield.
     def max_sharpe_portfolio(self, date, n_points=1000):
         ticker = yf.Ticker("^TNX")
-        print(ticker)
         data = ticker.history(start=date, end=date)
         risk_free_rate = data["Close"].iloc[-1] / 100
         log_risk_free_rate = np.log(1 + risk_free_rate)
