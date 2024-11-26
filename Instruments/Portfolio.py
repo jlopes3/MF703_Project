@@ -23,13 +23,15 @@ class Portfolio:
     Class representing a portfolio of financial instruments.
     """
 
-    def __init__(self, instrument_list):
+    def __init__(self, instrument_list, rf, equity_bench=None, future_bench=None, fi_bench=None):
         """
         Initialize a portfolio.
 
         Args:
             instrument_weight_list (FinancialInstrument, float): List of tuples where the the first element
                 is the FinancialInstrument and the second element is the weight as a float.
+            rf (float): risk-free rate
+            equity_bench,future_bench,fi_bench: Financial instruments representing respective asset class benchmarks
         """
         self.period = "Total time period"
         self.instruments = instrument_list
@@ -50,9 +52,15 @@ class Portfolio:
         # Gets the expected annualized log returns for each instrument into a Series
         # The logic of this may need to change based on how we want to calculate expected
         # return values for each instrument/portfolio
-        expected_annualized_log_returns_dict = {
-            instrument.ticker + " Expected Annualized Log Return": instrument.expected_annualized_log_return() for instrument in self.instruments
-        }
+        expected_annualized_log_returns_dict = {}
+        for instrument in self.instruments:
+            if type(instrument) is ETF:
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,equity_bench)
+            elif type(instrument) is Future:
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,future_bench)
+            else:
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,fi_bench)
+            
         self.expected_annualized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
 
     def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
