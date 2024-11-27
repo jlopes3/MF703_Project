@@ -1,7 +1,7 @@
 # %%
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
+import scipy as sci
 from datetime import datetime, timedelta
 # %%
 def election_day(year):
@@ -168,16 +168,123 @@ class Treasuries:
         beta = covariance / market_variance
         return beta
     
-    def time_till_coupon(self, current_date):
-        """Creating a pandas series to get the values of time till coupon payments given a new time"""
+    def times_till_coupon(self, current_date):
+        """Creating a numpy array to get the values of time till coupon payments given a new time
+            Returns time till maturity in number of days till coupon/360
+        """
         time_till_next_coupon = self.cash_flow_dates.apply( lambda x : (x - current_date))
         time_till_next_coupon = time_till_next_coupon.apply(lambda x: x.days)
         time_till_next_coupon = time_till_next_coupon.apply(lambda x: max(x, 0))
-        return time_till_next_coupon
+        return np.array(time_till_next_coupon/360)
     
-    def new_price(self, current_date, new_ytm):
-        """Calculating the new price of a bond given a new yield to maturity and a new date"""
-        new_times = self.time_till_coupon(current_date=current_date)
+    def interpolated_yield_curve(self, S: pd.Series, T):
+        """Returning of yield curve interpolation method given a yield curve (pandas series) and time of maturity T."""
+        icurve = sci.interpolate.CubicSpline(x= S.index, y = S)
+
+        return icurve(T)
+    
+    def spot_rates(self, S: pd.Series):
+        """Bootstrapping spot rates from a yield curve interpolation"""
+
+        # Computing yields from the interpolated yield curve
+        tenors = np.arange(.5, 30 + .5, .5)
+
+        yields = self.interpolated_yield_curve(S, tenors)/100
+
+        # Bootstrapping spot rates
+        s_rates = np.array([yields[0]])
+        discount_factors = (1+s_rates/2)**(-1)
+
+        for i in range(1, len(tenors)):
+            y = yields[i]
+
+            first_part = 1 - y/2*discount_factors.sum()
+            second_part = (1+y/2)**(-1)
+
+            discount_factors = np.append(discount_factors, first_part * second_part)
+
+            if first_part <= 0:
+                raise ValueError(f"Negative or zero discount factor at tenor {tenors[i]}. Check yield inputs.")
+            
+            s_rates = np.append(s_rates, 2*discount_factors[i]**(-1/(2*tenors[i])) - 2)
+        
+        return s_rates
+    
+    def interpolated_spot_curve(self, S:pd.Series, T):
+        """Interpolating the Spot Curve given a pandas series containing yields, and a new time T"""
+        s_rates = self.spot_rates(S= S)
+        tenors = np.arange(.5 , 30 + .5, .5)
+        icurve = sci.interpolate.CubicSpline(x= tenors, y = s_rates)
+
+        return icurve(T)
+
+    
+    def new_price(self, S:pd.DataFrame):
+        """Calculating the new price of a bond given a new yield curve.
+        S - S.index : datetime objects or pandas timeseries/timestamps
+        """
+
+        #initializing an empty series for the for loop
+        price_array = np.array([])
+
+        #calculating the price per row
+        for i in range(len(S.index)):
+
+            #getting the row for the dataframe
+            row = S.iloc[i,:]
+
+            # Calculating Tenors for coupon payments
+            ## Remember tenors are (number of days till next coupon/360)
+            tenors = self.times_till_coupon(current_date=row.name)
+            tenors = tenors[tenors>0]
+
+            #getting remaining coupons
+            coupons = self.cash_flows()[-len(tenors):]
+
+            #getting spot rates
+
+            ## If there is an error in finding the discount rates, we use the spot curve of the previous day.
+            j = i
+            while True:
+                print(j)
+                try:
+                    s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
+                except ValueError:
+                    j-= 1
+                else:
+                    break
+                if abs(j - i) > 30:
+                    break
+            
+            ## If no spot rate can be found, we go in the reverse direction
+                try:
+                    s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
+                except ValueError:
+                    j+=1
+                except IndexError:
+                    print("Interpolated curves cannot support discount rates")
+                    break
+                else:
+                    break
+            
+            #setting empty discount factors array
+            discount_factors = np.array([])
+
+            if len(s_rates)!= len(coupons):
+                print(s_rates)
+
+            #calculating the discount factors
+            for k in range(len(tenors)):
+                disc_factor = (1+s_rates[k]/2)**(-2*tenors[k])
+                discount_factors = np.append(discount_factors, disc_factor)
+            
+
+            #dotting the coupon vector with the discount factors vector to get the new price
+            price_array = np.append(price_array, coupons @ discount_factors)
+
+        price_series = pd.Series(price_array, index = S.index)
+        return price_series
+        
         
 
 # %%
