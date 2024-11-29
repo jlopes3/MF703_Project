@@ -213,7 +213,7 @@ class Treasuries:
     def interpolated_spot_curve(self, S:pd.Series, T):
         """Interpolating the Spot Curve given a pandas series containing yields, and a new time T"""
         s_rates = self.spot_rates(S= S)
-        tenors = np.arange(.5 , 10+.5, .5)
+        tenors = np.arange(.5 , 30+.5, .5)
         icurve = sci.interpolate.CubicSpline(x= tenors, y = s_rates)
 
         return icurve(T)
@@ -246,15 +246,6 @@ class Treasuries:
                 price_array = np.append(price_array, self.face_value)
                 continue
 
-            #Zero Coupon Bonds:
-            if self.maturity_years == .5:
-                t = tenors[0]
-                
-                ## accrued interest formula
-                zcb_price  = self.face_value*(1+self.ytm/2)**(-t)
-                price_array = np.append(price_array, zcb_price)
-                continue
-
             #getting remaining coupons
             coupons = self.cash_flows()[-len(tenors):]
 
@@ -273,7 +264,7 @@ class Treasuries:
                     j= i
                     break
             
-            ## If no spot rate can be found, we go in the reverse directio
+            ## If no spot rate can be found, we go in the reverse direction
             while True:
                 try:
                     s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
@@ -320,7 +311,6 @@ class Treasury(Treasuries):
         ytm_ = df.iloc[0,:][maturity_years]
         i_date = df.index[0]
         self.par_curve = df
-        print(ytm_)
         super().__init__(ytm_, maturity_years, face_value_, frequency_, i_date)
     
     def new_price(self):
