@@ -213,7 +213,7 @@ class Treasuries:
     def interpolated_spot_curve(self, S:pd.Series, T):
         """Interpolating the Spot Curve given a pandas series containing yields, and a new time T"""
         s_rates = self.spot_rates(S= S)
-        tenors = np.arange(.5 , 30 + .5, .5)
+        tenors = np.arange(.5 , 10+.5, .5)
         icurve = sci.interpolate.CubicSpline(x= tenors, y = s_rates)
 
         return icurve(T)
@@ -261,6 +261,7 @@ class Treasuries:
             # getting spot rates
             ## If there is an error in finding the discount rates, we use the spot curve of the previous day.
             j = i
+            s_rates = 0
             while True:
                 try:
                     s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
