@@ -220,16 +220,18 @@ class Treasuries:
 
     
     def new_price(self, S:pd.DataFrame):
-        """Calculating the new price of a bond given a new yield curve.
+        """Calculating the daily price of a bond given a new yield curve.
         S - S.index : datetime objects or pandas timeseries/timestamps
+        Returns a pandas series with price data and indices of the dates
         """
 
         #initializing an empty series for the for loop
         price_array = np.array([])
 
+
+
         #calculating the price per row
         for i in range(len(S.index)):
-
             #getting the row for the dataframe
             row = S.iloc[i,:]
 
@@ -238,15 +240,28 @@ class Treasuries:
             tenors = self.times_till_coupon(current_date=row.name)
             tenors = tenors[tenors>0]
 
+
+            ## checking if tenors is empty. if it is, the bond has matured, and is equal to the face value
+            if len(tenors) == 0:
+                price_array = np.append(price_array, self.face_value)
+                continue
+
+            #Zero Coupon Bonds:
+            if self.maturity_years == .5:
+                t = tenors[0]
+                
+                ## accrued interest formula
+                zcb_price  = self.face_value*(1+self.ytm/2)**(-t)
+                price_array = np.append(price_array, zcb_price)
+                continue
+
             #getting remaining coupons
             coupons = self.cash_flows()[-len(tenors):]
 
-            #getting spot rates
-
+            # getting spot rates
             ## If there is an error in finding the discount rates, we use the spot curve of the previous day.
             j = i
             while True:
-                print(j)
                 try:
                     s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
                 except ValueError:
@@ -254,9 +269,11 @@ class Treasuries:
                 else:
                     break
                 if abs(j - i) > 30:
+                    j= i
                     break
             
-            ## If no spot rate can be found, we go in the reverse direction
+            ## If no spot rate can be found, we go in the reverse directio
+            while True:
                 try:
                     s_rates = self.interpolated_spot_curve(S= S.iloc[j,:], T= tenors)
                 except ValueError:
@@ -277,14 +294,47 @@ class Treasuries:
             for k in range(len(tenors)):
                 disc_factor = (1+s_rates[k]/2)**(-2*tenors[k])
                 discount_factors = np.append(discount_factors, disc_factor)
-            
 
             #dotting the coupon vector with the discount factors vector to get the new price
             price_array = np.append(price_array, coupons @ discount_factors)
 
         price_series = pd.Series(price_array, index = S.index)
         return price_series
+
+
+class Treasury(Treasuries):
+    """Creating a class that takes in a Dataframe, and choice of treasury that inherits from the Treasuries class
+    
+    Paramters:
+        maturity_years : float or int
+        df: pandas dataframe containing par yield curves
+        face_value: int. assumes 100 face
+        frequency: float. compounding frequency. assume semi-annual compounding
+    
+    """
+    def __init__(self, maturity_years, df: pd.DataFrame, face_value_ = 100, 
+                 frequency_=2):
         
+        # collecting data from the dataframe
+        ytm_ = df.iloc[0,:][maturity_years]
+        i_date = df.index[0]
+        self.par_curve = df
+        print(ytm_)
+        super().__init__(ytm_, maturity_years, face_value_, frequency_, i_date)
+    
+    def new_price(self):
+        """
+        Calculate the daily price of the bond using the DataFrame passed during initialization.
         
+        Uses the `new_price` method from the parent class but automatically
+        uses `self.df` as the DataFrame input.
+        
+        Returns:
+            pd.Series: A Series of bond prices indexed by dates from the DataFrame.
+        """
+        return super().new_price(self.par_curve)
+
+
+
 
 # %%
