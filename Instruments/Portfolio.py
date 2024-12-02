@@ -198,6 +198,35 @@ class Portfolio:
                         for inst in self.instruments]) + \
             f"Start Date: {start_date}\nEnd Date: {end_date}"
     
+    def portfolio_VaR(self,weights,conf_level = .95):
+        """
+        Calculate the Value at Risk of the current portfolio
+        
+        Args:
+            conf_level (float): confidence level of calculation
+            weights: vector of weights of items in portfolio
+        Returns:
+            float: VaR 
+        """
+        z_score = norm.ppf(conf_level)
+        var = z_score * self.annualized_portfolio_vol(weights)
+        return var
+    
+    def portfolio_ES(self,weights,conf_level=.95):
+        """
+        Calculate the Expected Shortfall of the current portfolio
+
+        Args:
+            conf_level (float): confidence level of calculation
+            weights: vector of weights of items in portfolio
+        Returns:
+            float: ES
+        """
+        z_score = norm.ppf(conf_level)
+        phi = norm.pdf(z_score)
+        es = self.annualized_portfolio_vol(weights)*(phi/(1-conf_level))
+        return es
+
     def __str__(self):
         return self.summary()
 
