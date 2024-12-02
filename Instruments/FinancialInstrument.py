@@ -72,24 +72,14 @@ class FinancialInstrument(ABC):
         """
         pass
     
-    # This is calculated using just the historical yearly log return. This needs to be 
-    # redone use some other method for calculating expected annualized log return
-    def expected_annualized_log_return(self,rf,benchmark):
-        """
-        Calculates the expected return using CAPM for an individual financial instrument
-        Uses average log returns as expected market return
-        
-        Parameters:
-            rf: float representing risk-free rate. Currently must be passed as a single value
-            benchmark: financial instrument representing a market benchmark
-            
-        Returns:
-            float: A float representing the expected return
-        """
-        beta = self.calculate_beta(benchmark)
-        mkt_premium = benchmark.log_returns.mean() * 252 - rf
-        exp_return = beta * mkt_premium + rf
-        return exp_return
+    # This is calculated using CAPM
+    def expected_annualized_log_return(self, rf, benchmark):
+        beta = self.calculate_beta(benchmark) # beta using log returns
+        log_risk_free_rate = np.log(1 + rf)
+        expected_log_returns_benchmark = benchmark.log_returns.mean() * 252
+        exp_log_return = beta * (expected_log_returns_benchmark - log_risk_free_rate) + log_risk_free_rate
+        return float(exp_log_return.iloc[0])
+        # return float((self.log_returns.mean()*252).iloc[0])
 
     
     def get_date_range(self):

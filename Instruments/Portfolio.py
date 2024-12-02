@@ -23,18 +23,24 @@ class Portfolio:
     Class representing a portfolio of financial instruments.
     """
 
-    def __init__(self, instrument_list, rf, equity_bench=None, future_bench=None, fi_bench=None):
+    def __init__(self, instrument_list, rf, equity_benchmark=None, future_benchmark=None, treasury_benchmark=None):
         """
         Initialize a portfolio.
 
         Args:
             instrument_weight_list (FinancialInstrument, float): List of tuples where the the first element
                 is the FinancialInstrument and the second element is the weight as a float.
-            rf (float): risk-free rate
-            equity_bench,future_bench,fi_bench: Financial instruments representing respective asset class benchmarks
+            rf (float): Risk-free rate to be used in CAPM formula and Sharpe Ratio. Not logarithm
+            equity_benchmark (FinancialInstrument): Financial Instrument for the market in CAPM formula
+            future_benchmark (FinancialInstrument): Financial Instrument for the future in CAPM formula
+            treasury_benchmark (FinancialInstrument): Financial Instrument for the treasury in CAPM formula
         """
         self.period = "Total time period"
         self.instruments = instrument_list
+        self.rf = rf
+        self.equity_benchmark = equity_benchmark
+        self.future_benchmark = future_benchmark
+        self.treasury_benchmark = treasury_benchmark
         
         # Gets all instruments to have the same time period
         self.start_date = (max(self.instruments, key=lambda instrument: instrument.get_date_range()[0])).get_date_range()[0]
@@ -54,14 +60,14 @@ class Portfolio:
         # return values for each instrument/portfolio
         expected_annualized_log_returns_dict = {}
         for instrument in self.instruments:
-            if type(instrument) is ETF:
-                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,equity_bench)
-            elif type(instrument) is Future:
-                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,future_bench)
+            if instrument.instrument_type == "ETF":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.equity_benchmark)
+            elif instrument.instrument_type == "Future":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.future_benchmark)
             else:
-                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(rf,fi_bench)
-            
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.treasury_benchmark)    
         self.expected_annualized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
+
 
     def filter(self, startDate=date(1800, 1, 1), endDate=date(2100, 12, 31), period=0):
         if period == 0:
@@ -82,9 +88,14 @@ class Portfolio:
         # Gets the expected annualized log returns for each instrument into a Series
         # The logic of this may need to change based on how we want to calculate expected
         # return values for each instrument/portfolio
-        expected_annualized_log_returns_dict = {
-            instrument.ticker + " Expected Annualized Log Return": instrument.expected_annualized_log_return() for instrument in self.instruments
-        }
+        expected_annualized_log_returns_dict = {}
+        for instrument in self.instruments:
+            if instrument.instrument_type == "ETF":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.equity_benchmark)
+            elif instrument.instrument_type == "Future":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.future_benchmark)
+            else:
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.treasury_benchmark)    
         self.expected_annualized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
 
     
@@ -158,11 +169,8 @@ class Portfolio:
     # optimal weights. It then selects the best sharpe ratio and returns the maximum sharpe
     # ratio and the corresponding returns, volatility, and weights. date is the day to get
     # the risk free rate from. The risk free rate is from 10 Year Treasury yield.
-    def max_sharpe_portfolio(self, date, n_points=1000):
-        ticker = yf.Ticker("^TNX")
-        data = ticker.history(start=date, end=date)
-        risk_free_rate = data["Close"].iloc[-1] / 100
-        log_risk_free_rate = np.log(1 + risk_free_rate)
+    def max_sharpe_portfolio(self, n_points=1000):
+        log_risk_free_rate = np.log(1 + self.rf)
         weights = self.optimal_weights(n_points)
         rets = [self.expected_portfolio_return(w) for w in weights]
         sharpe_list = []
