@@ -8,7 +8,6 @@ from DateRanges import electionPeriodBoolsDF, e_year_ranges
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
-from ExpectedReturnCalc import ExpectedReturnsCalculator
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.graph_objects as go
