@@ -324,7 +324,20 @@ class Treasury(Treasuries):
             pd.Series: A Series of bond prices indexed by dates from the DataFrame.
         """
         return super().new_price(self.par_curve)
+    
+    def open_position(self):
+        return self.price()
 
+    def close_position(self):
+        """A method to get the full closing position of the bond.
+            Accounts for the coupon payment during the period.
+            TAKES ABOUT A MINUTE TO RUN since it calls Treasury.new_price()
+        """
+        position = self.new_price().iloc[-1,:][self.maturity_years]
+        if self.maturity_years != .5:
+            position += self.cash_flows()[0]
+        
+        return position 
 
 
 
