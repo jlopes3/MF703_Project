@@ -22,7 +22,7 @@ class Portfolio:
     Class representing a portfolio of financial instruments.
     """
 
-    def __init__(self, instrument_list, rf, equity_benchmark=None, future_benchmark=None, treasury_benchmark=None):
+    def __init__(self, instrument_list, rf=0, equity_benchmark=None, future_benchmark=None, treasury_benchmark=None):
         """
         Initialize a portfolio.
 
@@ -57,6 +57,18 @@ class Portfolio:
         # Gets the expected annualized log returns for each instrument into a Series
         # The logic of this may need to change based on how we want to calculate expected
         # return values for each instrument/portfolio
+        expected_annualized_log_returns_dict = {}
+        for instrument in self.instruments:
+            if instrument.instrument_type == "ETF":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.equity_benchmark)
+            elif instrument.instrument_type == "Future":
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.future_benchmark)
+            else:
+                expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.treasury_benchmark)    
+        self.expected_annualized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
+
+    def set_rf(self, new_rf):
+        self.rf = new_rf
         expected_annualized_log_returns_dict = {}
         for instrument in self.instruments:
             if instrument.instrument_type == "ETF":
@@ -196,13 +208,14 @@ class Portfolio:
         Returns:
             str: Summary of the portfolio.
         """
-        start_date = self.portfolio_log_returns.index[0]
-        end_date = self.portfolio_log_returns.index[-1]
+        start_date = self.asset_log_returns_df.index[0]
+        end_date = self.asset_log_returns_df.index[-1]
 
-        return f"Period: {self.period}\n" + \
+        return f"\nPeriod: {self.period}\n" + \
+            f"Risk-free rate: {self.rf}\n" + \
             "\n".join([f"Instrument: {inst.ticker}" 
                         for inst in self.instruments]) + \
-            f"Start Date: {start_date}\nEnd Date: {end_date}"
+            f"\nStart Date: {start_date}\nEnd Date: {end_date}\n"
     
     def portfolio_VaR(self,weights,conf_level = .95):
         """
