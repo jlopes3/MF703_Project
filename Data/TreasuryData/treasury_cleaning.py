@@ -48,6 +48,15 @@ merged_df = merged_df.sort_values(by=date_column)
 # Set the date column as the index
 merged_df = merged_df.set_index(date_column)
 
+# Interpolate missing data
+merged_df.interpolate(inplace=True)
+
+# Dropping columns with missing data
+merged_df.dropna(axis = 1, inplace = True)
+
+# Dropping the 3 month treasury because it is irrelevant
+merged_df.drop(columns = ["3 Mo"], inplace=True)
+
 # Save the merged DataFrame to a single CSV file
 merged_df.to_csv(output_file)
 
