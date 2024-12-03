@@ -12,7 +12,7 @@ def get_risk_free_rate(dateString):
     df.rename(columns={'Unnamed: 0': 'Date'}, inplace=True)
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
-    halfYear = df["1 Mo"].to_frame()
-    rf = halfYear.loc[dateString, '1 Mo']
+    halfYear = df["6 Mo"].to_frame()
+    rf = halfYear.loc[dateString, '6 Mo']
     rf = rf / 100
     return rf
