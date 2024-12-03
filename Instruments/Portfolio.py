@@ -97,6 +97,13 @@ class Portfolio:
                 expected_annualized_log_returns_dict[instrument.ticker + " Expected Annualized Log Return"] = instrument.expected_annualized_log_return(self.rf, self.treasury_benchmark)    
         self.expected_annualized_log_returns_df = pd.Series(expected_annualized_log_returns_dict)
 
+    def historical_annualized_log_return(self, weights):
+        # Gets the historical returns of the portfolio using the given weights
+        # and the time period decided by the filter function
+        # Annualizes the log returns of each asset and then dots them with the
+        # weights
+        return ((self.asset_log_returns_df.mean() * 252) * weights).sum()
+
     
     def annualized_covariance_matrix(self):
         """
