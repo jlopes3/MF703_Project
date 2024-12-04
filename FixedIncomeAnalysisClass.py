@@ -338,6 +338,30 @@ class Treasury(Treasuries):
             position += self.cash_flows()[0]
         
         return position 
+    
+    def price_plus_coupon(self):
+        """Calculates price + coupon payment. 
+        
+        Note: this is only specified for the analysis period. Not for a general coupon bond
+        """        
+
+        prices = self.new_price()
+
+        if self.maturity_years == .5:
+            return prices
+
+        coupon_date = self.cash_flow_dates[0]
+        coupon_payment = self.cash_flows()[0]
+
+        # a boolean array of when we hold the coupon payment
+        date_bool = (prices.index >= coupon_date).astype(int)
+
+        coupon_series = date_bool *coupon_payment
+
+        return coupon_series+ prices 
+
+
+
 
 
 
