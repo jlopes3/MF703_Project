@@ -180,8 +180,9 @@ class Portfolio:
         weights = self.optimal_weights(n_points,min_weight,max_weight)
         rets = [self.expected_portfolio_return(w) for w in weights]
         vols = np.array([self.annualized_portfolio_vol(w) for w in weights])
-        ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
-        ef.plot(x='Volatility', y='Returns', style='.-', color='green')
+        ef = pd.DataFrame({'Annualized Log Return': rets, 'Volatility': vols})
+        graph = ef.plot(x='Volatility', y='Annualized Log Return', style='.-', color='green', markersize=1, legend=False, title="Efficient Frontier")
+        graph.set_ylabel('Annualized Log Return')
         return
     
     # This function calculates the maximum Sharpe ratio portfolio for a given period. It
