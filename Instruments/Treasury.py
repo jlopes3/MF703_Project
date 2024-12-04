@@ -24,7 +24,7 @@ class Treasury(FinancialInstrument):
             None
         """
         self.tickerCode = ticker
-        self.df = pd.read_csv("../Data/TreasuryData/Treasury-Price-Data.csv")
+        self.df = pd.read_csv("../Data/TreasuryData/Treasury-Price-Plus-Coupon-Data.csv")
         self.df.rename(columns={'Unnamed: 0': 'Date'}, inplace=True)
         self.df['Date'] = pd.to_datetime(self.df['Date'])
         self.df.set_index('Date', inplace=True)
