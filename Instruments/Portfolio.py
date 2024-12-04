@@ -139,10 +139,10 @@ class Portfolio:
     # portfolio.expected_portfolio_return(weights), so that function needs to be looked at
     # more carefully. The bounds are set to -0.5 and 0.5 for the weights of any individual
     # instrument.
-    def minimize_vol(self, target_return):
+    def minimize_vol(self, target_return,min_weight=-0.5,max_weight=0.5):
         n = self.expected_annualized_log_returns_df.shape[0]
         init_guess = np.repeat(1/n, n)
-        bounds = ((-0.5, 0.5),)*n  # We can adjust the constraints for individual asset weights here
+        bounds = ((min_weight, max_weight),)*n  # We can adjust the constraints for individual asset weights here
         return_is_target = {
             'type' : 'eq',
             'args' : (self.expected_annualized_log_returns_df,),
@@ -164,17 +164,17 @@ class Portfolio:
     # various target returns. The various target returns are decided by taking n_points
     # target returns between the lowest indiviudal expected_annualized_log_return of the
     # instruments and the highest indiviudal expected_annualized_log_return of the instruments.
-    def optimal_weights(self, n_points):
+    def optimal_weights(self, n_points, min_weight=-.5, max_weight=.5):
         target_rs = np.linspace(self.expected_annualized_log_returns_df.min(), self.expected_annualized_log_returns_df.max(), n_points)
-        weights = [self.minimize_vol(target_return) for target_return in target_rs]
+        weights = [self.minimize_vol(target_return,min_weight,max_weight) for target_return in target_rs]
         return weights
     
     # This function plots the efficient frontier by plotting the points by getting the optimal
     # weights for n_points target returns. It uses the optimal weights to calculate the annualized
     # portfolio volatility for each target return, and plots the returns as a function of the
     # volatility.
-    def plot_ef(self, n_points=1000):
-        weights = self.optimal_weights(n_points)
+    def plot_ef(self, n_points=1000, min_weight=-.5, max_weight=.5):
+        weights = self.optimal_weights(n_points,min_weight,max_weight)
         rets = [self.expected_portfolio_return(w) for w in weights]
         vols = np.array([self.annualized_portfolio_vol(w) for w in weights])
         ef = pd.DataFrame({'Returns': rets, 'Volatility': vols})
@@ -187,9 +187,9 @@ class Portfolio:
     # optimal weights. It then selects the best sharpe ratio and returns the maximum sharpe
     # ratio and the corresponding returns, volatility, and weights. date is the day to get
     # the risk free rate from. The risk free rate is from 10 Year Treasury yield.
-    def max_sharpe_portfolio(self, n_points=1000):
+    def max_sharpe_portfolio(self, n_points=1000, min_weight=-.5, max_weight=.5):
         log_risk_free_rate = np.log(1 + self.rf)
-        weights = self.optimal_weights(n_points)
+        weights = self.optimal_weights(n_points, min_weight, max_weight)
         rets = [self.expected_portfolio_return(w) for w in weights]
         sharpe_list = []
         for ret, w in zip(rets, weights):
