@@ -52,7 +52,10 @@ class Portfolio:
             instrument.ticker: instrument.log_returns for instrument in self.instruments
         }
         self.full_asset_log_returns_df = pd.concat(log_returns_dict, axis=1) # Should not change with filtering
-        self.asset_log_returns_df = self.full_asset_log_returns_df
+        self.full_asset_log_returns_df = self.full_asset_log_returns_df.dropna()
+        self.asset_log_returns_df = self.full_asset_log_returns_df.dropna()
+
+
         
         # Gets the expected annualized log returns for each instrument into a Series
         # The logic of this may need to change based on how we want to calculate expected
