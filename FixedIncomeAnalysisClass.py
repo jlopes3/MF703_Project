@@ -49,7 +49,10 @@ class Treasuries:
     
     def discount_factors(self):
         """ returns the discount factors as a numpy array"""
-        return np.array([(1+self.ytm/self.frequency)**(-i) for i in range(1,self.periods + 1)])
+
+        discount_factors_list = [(1+self.ytm/self.frequency)**(-i) for i in range(1,self.periods + 1)]
+
+        return np.array(discount_factors_list).T
 
     def price(self):
         """
@@ -62,9 +65,9 @@ class Treasuries:
         cash_flows = self.cash_flows()
 
         discounts = self.discount_factors()
-        price = round(discounts@cash_flows, 2)
+        price = discounts@cash_flows
 
-        return price
+        return price[0]
 
     def modified_duration(self):
         """
@@ -74,8 +77,10 @@ class Treasuries:
             float: Modified duration.
         """
 
-        der_discount = np.array([-i/self.frequency *(self.ytm/self.frequency)**(-i-1) for i in range(1,self.periods + 1)])
-        fprime = self.cash_flows() @ der_discount
+        y = self.ytm
+
+        der_discount = np.array([-i/self.frequency *(1+ y/self.frequency)**(-i-1) for i in range(1,self.periods + 1)]).T
+        fprime = der_discount @ self.cash_flows() 
 
         return - fprime / self.price()
     
@@ -96,8 +101,11 @@ class Treasuries:
         Returns:
             float: Convexity.
         """
+
+        y = self.ytm
+
         
-        der_2_discount = np.array([ i*(i+1)/(self.frequency)**2 *(1+self.ytm/self.frequency)**(-i-2) for i in range(1,self.periods + 1)])
+        der_2_discount = np.array([ i*(i+1) /(self.frequency)**2 *(1+self.ytm/self.frequency)**(-i-2) for i in range(1,self.periods + 1)]).T
         f_2_prime = der_2_discount @ self.cash_flows()
         
         return f_2_prime/self.price()
