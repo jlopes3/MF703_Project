@@ -180,10 +180,22 @@ class Portfolio:
         weights = self.optimal_weights(n_points,min_weight,max_weight)
         rets = [self.expected_portfolio_return(w) for w in weights]
         vols = np.array([self.annualized_portfolio_vol(w) for w in weights])
+        sharpe_list = []
+        for ret, vol, w in zip(rets, vols, weights):
+            sharpe_ratio = ((ret - np.log(1 + self.rf)) / vol)
+            sharpe_list += [(sharpe_ratio, ret, w, vol)]
+        max_sharpe, max_sharpe_ret, max_sharpe_weights, max_sharpe_vol = max(sharpe_list, key=lambda x: x[0])
         ef = pd.DataFrame({'Annualized Log Return': rets, 'Volatility': vols})
-        graph = ef.plot(x='Volatility', y='Annualized Log Return', style='.-', color='green', markersize=0, legend=False, title="Efficient Frontier")
+        plain_graph = ef.plot(x='Volatility', y='Annualized Log Return', style='.-', color='green', markersize=0, legend=False, title="Efficient Frontier")
+        plain_graph.set_ylabel('Annualized Log Return')
+        graph = ef.plot(x='Volatility', y='Annualized Log Return', style='.-', color='green', markersize=0, legend=False, label="Efficient Frontier")
+        vol_coords = [0, max_sharpe_vol, max_sharpe_vol + .04]
+        ret_coords = [np.log(1 + self.rf), max_sharpe_ret, ((((max_sharpe_ret - np.log(1 + self.rf)) / max_sharpe_vol) * 0.04) + max_sharpe_ret)]
+        graph.plot(vol_coords, ret_coords, color='red', linestyle='solid', label="Capital Market Line")
         graph.set_ylabel('Annualized Log Return')
-        return
+        graph.scatter([max_sharpe_vol], [max_sharpe_ret], color='blue', s=20, label="Maximum Sharpe Portfolio")
+        graph.legend(loc='lower right')
+        return max_sharpe, max_sharpe_ret,  max_sharpe_vol, max_sharpe_weights
     
     # This function calculates the maximum Sharpe ratio portfolio for a given period. It
     # calculates n_points optimal weights and then calculates the volatility and returns
