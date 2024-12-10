@@ -7,7 +7,7 @@ from datetime import date
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), '..')))
-from DateRanges import electionPeriodBoolsDF
+from Instruments.DateRanges import electionPeriodBoolsDF
 
 class FinancialInstrument(ABC):
     """
